@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import jwt from "jsonwebtoken"
+import { strongPassword } from "../utils/passwordStrong.js"
 
 
 const genarateAccessTokenAndRefreshToken = async (userId) => {
@@ -30,6 +31,12 @@ const registerUser = asyncHandler(async (req, res) => {
         .some((fields) => fields?.trim() === "")
     ) {
         throw new ApiError(400, 'Required all information for registration')
+    }
+
+    const checkPassword = strongPassword(password)
+
+    if(!checkPassword){
+        throw new ApiError(400,"uppercase , lowercase , number and symbol all should be present and password should be atleast 8 digit.")
     }
 
     const alreadyUserPresent = await User.findOne({
@@ -172,7 +179,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
         const user = await User.findById(decodedToken?._id)
 
-        const {refreshToken, accessToken} = genarateAccessTokenAndRefreshToken(user?._id)
+        const {refreshToken, accessToken} = await genarateAccessTokenAndRefreshToken(user?._id)
 
         user.refreshToken = refreshToken
         user.save({ validateBeforeSave: false })
