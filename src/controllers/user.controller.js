@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import jwt from "jsonwebtoken"
 import { strongPassword } from "../utils/passwordStrong.js"
+import nodemailer from "nodemailer"
 
 
 const genarateAccessTokenAndRefreshToken = async (userId) => {
@@ -35,8 +36,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const checkPassword = strongPassword(password)
 
-    if(!checkPassword){
-        throw new ApiError(400,"uppercase , lowercase , number and symbol all should be present and password should be atleast 8 digit.")
+    if (!checkPassword) {
+        throw new ApiError(400, "uppercase , lowercase , number and symbol all should be present and password should be atleast 8 digit.")
     }
 
     const alreadyUserPresent = await User.findOne({
@@ -75,7 +76,6 @@ const loginUser = asyncHandler(async (req, res) => {
     //responese logged user 
     //store refresh token and access token
 
-    console.log(req.body);
     const { userName, email, password } = req.body
 
     if (!(userName || email)) {
@@ -179,14 +179,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
         const user = await User.findById(decodedToken?._id)
 
-        const {refreshToken, accessToken} = await genarateAccessTokenAndRefreshToken(user?._id)
+        const { refreshToken, accessToken } = await genarateAccessTokenAndRefreshToken(user?._id)
 
         user.refreshToken = refreshToken
         user.save({ validateBeforeSave: false })
 
         const option = {
             httpOnly: true
-            
+
         }
 
         return res
@@ -200,10 +200,60 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 })
 
+const mailvarification = asyncHandler(async (req, res) => {
+
+    const  {email} = req.body
+
+    if(!(email)){
+        throw new ApiError(400,"username or email required.")
+    }
+
+    const user = await User.findOne({email})
+
+    if(!user){
+        throw new ApiError(404,"User not found with this email.")
+    }
+    
+    const transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: {
+            user: 'timmothy66@ethereal.email',
+            pass: 'ZfTRxj2WAEzG18utTT'
+        }
+    })
+
+    const verificationOtp= Math.floor(1000+Math.random()*9000)
+    user.verificationOtp = verificationOtp
+
+    await user.save({validateBeforeSave:false})
+
+ try {
+       const info = await transporter.sendMail({
+           from:"Yash <timmothy66@ethereal.email>",
+           to:email,
+           subject:"OTP verification",
+           text:`The verification code is ${verificationOtp}`
+       })    
+   
+       return res
+       .status(200)
+       .json(
+        new ApiResponse(200,info ,user,"Email recived successfully.")
+       )
+ } catch (error) {
+    throw new ApiError(500,error.message,"Email verication problem")
+ }
+
+})
+
+
 export {
     registerUser,
     loginUser,
     changeUserData,
     changePassword,
-    refreshAccessToken
+    refreshAccessToken,
+    mailvarification
 }
