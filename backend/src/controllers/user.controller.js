@@ -199,20 +199,20 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 })
 
-const mailvarification = asyncHandler(async (req, res) => {
+const mailVarification = asyncHandler(async (req, res) => {
 
-    const  {email} = req.body
+    const { email } = req.body
 
-    if(!(email)){
-        throw new ApiError(400,"username or email required.")
+    if (!(email)) {
+        throw new ApiError(400, "username or email required.")
     }
 
-    const user = await User.findOne({email})
+    const user = await User.findOne({ email })
 
-    if(!user){
-        throw new ApiError(404,"User not found with this email.")
+    if (!user) {
+        throw new ApiError(404, "User not found with this email.")
     }
-    
+
     const transporter = nodemailer.createTransport({
         host: "smtp.ethereal.email",
         port: 587,
@@ -223,29 +223,54 @@ const mailvarification = asyncHandler(async (req, res) => {
         }
     })
 
-    const verificationOtp= Math.floor(1000+Math.random()*9000)
+    const verificationOtp = Math.floor(1000 + Math.random() * 9000)
     user.verificationOtp = verificationOtp
 
-    await user.save({validateBeforeSave:false})
+    await user.save({ validateBeforeSave: false })
 
- try {
-       const info = await transporter.sendMail({
-           from:"Yash <timmothy66@ethereal.email>",
-           to:email,
-           subject:"OTP verification",
-           text:`The verification code is ${verificationOtp}`
-       })    
-   
-       return res
-       .status(200)
-       .json(
-        new ApiResponse(200,info ,user,"Email recived successfully.")
-       )
- } catch (error) {
-    throw new ApiError(500,error.message,"Email verication problem")
- }
+    try {
+        const info = await transporter.sendMail({
+            from: "Yash <timmothy66@ethereal.email>",
+            to: email,
+            subject: "OTP verification",
+            text: `The verification code is ${verificationOtp}`
+        })
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, info, user, "Email recived successfully.")
+            )
+    } catch (error) {
+        throw new ApiError(500, error.message, "Email verication problem")
+    }
 
 })
+
+const OtpVarification = asyncHandler(async (req, res) => {
+
+    const { email, varificationOtp } = req.body
+
+    if (!varificationOtp) {
+        throw new ApiError(400, "Opt required.")
+    }
+
+    const user = await User.findOne({ email })
+
+    if (!(user.verificationOtp == varificationOtp)) {
+        throw new ApiError(400, "wrong Otp .")
+    }
+
+    const verified = user.verified = true
+    await user.save({ validateBeforeSave: false })
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, verified, "Verified Successfully")
+        )
+})
+
 
 
 export {
@@ -254,5 +279,6 @@ export {
     changeUserData,
     changePassword,
     refreshAccessToken,
-    mailvarification
+    mailVarification,
+    OtpVarification
 }
