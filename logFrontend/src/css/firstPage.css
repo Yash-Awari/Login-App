@@ -1,0 +1,24 @@
+.container{
+  height: 40vh;
+  width: 48vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  border: none;
+}
+
+.firstPageButton{
+  height: 10vh;
+  width: 25vw;
+  border: none;
+  font-size: 2em;
+  border-radius: 10px;
+  background:lightskyblue;
+}
+
+button:hover{
+  opacity: 0.6;
+}
+

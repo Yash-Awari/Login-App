@@ -1,3 +1,8 @@
+import dotenv from "dotenv"
+dotenv.config({
+    path:"./.env"
+})
+
 import express from "express"
 import cookieParser from "cookie-parser"
 import cors from "cors"
@@ -7,12 +12,10 @@ const app = express()
 const upload = multer()
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
 }))
-console.log(process.env.CORS_ORIGIN)
-console.log(process.env.REFRESH_TOKEN_DAYS);
-console.log(process.env.MONGODB_URI);
+
 
 
 app.use(express.json({ limit: "10kb" }))
